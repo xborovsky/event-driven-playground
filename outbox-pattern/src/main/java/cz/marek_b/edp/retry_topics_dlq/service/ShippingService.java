@@ -1,6 +1,10 @@
 package cz.marek_b.edp.retry_topics_dlq.service;
 
 import cz.marek_b.edp.retry_topics_dlq.carrier_api.CarrierApi;
+import cz.marek_b.edp.retry_topics_dlq.data.OutboxPublisher;
+import cz.marek_b.edp.retry_topics_dlq.data.OutboxPublisherRepository;
+import cz.marek_b.edp.retry_topics_dlq.data.ShipmentLabel;
+import cz.marek_b.edp.retry_topics_dlq.data.ShipmentLabelRepository;
 import cz.marek_b.edp.retry_topics_dlq.event.RetryMeta;
 import cz.marek_b.edp.retry_topics_dlq.event.ShipmentCreatedEvent;
 import cz.marek_b.edp.retry_topics_dlq.event.ShippingLabelCreatedEvent;
@@ -10,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.ByteBuffer;
@@ -26,16 +31,25 @@ public class ShippingService {
 
     private final CarrierApi carrierApi;
     private final KafkaTemplate<String, ShipmentCreatedEvent> kafkaTemplate;
-    private final KafkaTemplate<String, ShippingLabelCreatedEvent> shippingLabelCreatedEventKafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final OutboxPublisherRepository outboxPublisherRepository;
+    private final ShipmentLabelRepository shipmentLabelRepository;
 
+    @Transactional
     public void handle(ShipmentCreatedEvent evt, RetryMeta retryMeta) {
         try {
             carrierApi.doSomething();
 
-            var shippingLabelCreated = new ShippingLabelCreatedEvent(UUID.randomUUID(), evt.shipmentId(), "TODO", Instant.now());
+            var shipmentLabel = shipmentLabelRepository.save(new ShipmentLabel(UUID.randomUUID()));
 
-            shippingLabelCreatedEventKafkaTemplate.send("shipping.label-created", evt.orderId().toString(), shippingLabelCreated);
+            var shippingLabelCreatedEvent = new ShippingLabelCreatedEvent(
+                    UUID.randomUUID(),
+                    shipmentLabel.getShipmentId(),
+                    "TODO",
+                    Instant.now()
+            );
+
+            outboxPublisherRepository.save(new OutboxPublisher("shipping.label-created", evt.orderId().toString(), objectMapper.writeValueAsString(shippingLabelCreatedEvent)));
         } catch (CarrierTimeoutException e) {
             handleTempRetry(evt, retryMeta, e.getMessage());
         } catch (InvalidAddressException e) {
