@@ -2,7 +2,6 @@ package cz.marek_b.edp.retry_topics_dlq.task;
 
 import cz.marek_b.edp.retry_topics_dlq.data.OutboxPublisher;
 import cz.marek_b.edp.retry_topics_dlq.data.OutboxPublisherRepository;
-import cz.marek_b.edp.retry_topics_dlq.data.ShipmentLabel;
 import cz.marek_b.edp.retry_topics_dlq.event.ShippingLabelCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -12,7 +11,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Component
