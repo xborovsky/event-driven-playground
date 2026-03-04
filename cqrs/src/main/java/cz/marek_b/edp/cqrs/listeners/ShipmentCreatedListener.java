@@ -5,6 +5,7 @@ import cz.marek_b.edp.cqrs.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,8 +16,9 @@ public class ShipmentCreatedListener {
     private final ShipmentService shipmentService;
 
     @KafkaListener(topics = "shipping.shipment-created")
-    public void onShipmentCreated(ShipmentCreatedEvent shipmentCreatedEvent) {
+    public void onShipmentCreated(ShipmentCreatedEvent shipmentCreatedEvent, Acknowledgment acknowledgment) {
         shipmentService.upsertShipmentView(shipmentCreatedEvent);
+        acknowledgment.acknowledge();
     }
 
     @KafkaListener(topics = "shipping.shipment-created.dlq")

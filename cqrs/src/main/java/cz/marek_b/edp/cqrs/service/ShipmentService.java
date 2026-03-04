@@ -39,8 +39,6 @@ public class ShipmentService {
 
         if (shipmentView.getShipmentId() == null) {
             shipmentView.setShipmentId(shippingLabelCreatedEvent.shipmentId());
-            shipmentView.setShipmentCreatedAt(shippingLabelCreatedEvent.createdAt()); // placeholder, non-null field
-            shipmentView.setOrderId(UUID.randomUUID()); // placeholder, non-null field
         }
         shipmentView.setStatus(ShipmentView.Status.LABELED);
         shipmentView.setLabelId(shippingLabelCreatedEvent.labelId());

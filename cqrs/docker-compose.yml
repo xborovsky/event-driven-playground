@@ -7,44 +7,35 @@ services:
       POSTGRES_USER: event-driven-playground
       POSTGRES_PASSWORD: event-driven-playground
     ports:
-      - "5439:5439"
+      - "5439:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cqrs -d cqrs"]
+      test: ["CMD-SHELL", "pg_isready -U event-driven-playground -d event-driven-playground"]
       interval: 5s
       timeout: 3s
       retries: 20
 
   kafka:
-    image: bitnami/kafka:3.7
+    image: bitnami/kafka:latest
     container_name: event-driven-playground-kafka
     ports:
-      # klienti z hosta (Spring Boot na tvém PC) se připojí sem:
       - "9092:9092"
-      # interní port v docker síti (nevadí, je užitečný pro jiné kontejnery):
-      - "9094:9094"
     environment:
-      # KRaft (bez Zookeeperu)
       - KAFKA_ENABLE_KRAFT=yes
       - KAFKA_CFG_PROCESS_ROLES=broker,controller
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_NODE_ID=1
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@event-driven-playground-kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
 
-      # Listenery: jeden pro hosta, jeden pro kontejnery v síti
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9094,PLAINTEXT_HOST://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://event-driven-playground-kafka:9094,PLAINTEXT_HOST://localhost:9092
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CONTROLLER://:9093,INTERNAL://:9094,EXTERNAL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INTERNAL://event-driven-playground-kafka:9094,EXTERNAL://localhost:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INTERNAL
 
-      # dev-friendly
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - KAFKA_CFG_NUM_PARTITIONS=1
-
-      # Bitnami potřebuje unikátní cluster id (může být jakýkoli base64-ish string)
       - KAFKA_KRAFT_CLUSTER_ID=Y2xxcnMta2Fma2EtY2x1c3Rlcg==
-
-      # povolí plaintext
       - ALLOW_PLAINTEXT_LISTENER=yes
     volumes:
       - kafka_data:/bitnami/kafka
