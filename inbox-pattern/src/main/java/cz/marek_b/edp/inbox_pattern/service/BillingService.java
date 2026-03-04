@@ -1,7 +1,7 @@
 package cz.marek_b.edp.inbox_pattern.service;
 
 import cz.marek_b.edp.inbox_pattern.data.BillingInbox;
-import cz.marek_b.edp.retry_topics_dlq.event.ShippingLabelCreatedEvent;
+import cz.marek_b.edp.inbox_pattern.event.ShippingLabelCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
